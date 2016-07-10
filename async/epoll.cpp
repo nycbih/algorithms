@@ -1,27 +1,42 @@
+///////////////////////////////////////////////////////////////////////////////
+///
+/// generic epoll handler for asynchronous tasks
+///
+///////////////////////////////////////////////////////////////////////////////
+
 #include <sys/epoll.h>
 #include <unistd.h>
 
 #include <thread>
 #include <iostream>
 
+#define TMaxEvents 1024
+#define TIMEOUT 1000
 
-
-
-template <size_t TMaxEvents=1024>
-class Async
+class Epoll
 {
 public:
-    Async()
+    using TCallback = std::function<void (int)>;
+
+    Epoll()
     {
     }
-    ~Async()
+    ~Epoll()
     {
     }
     bool init()
     {
         int ret = epoll_create1(EPOLL_CLOEXEC);
         std::cout << "epoll_create=" << ret << std::endl;
-        return ret > 0;
+
+        if( ret > 0 )
+        {   
+            std::thread tmp(&Epoll::run,this);
+            m_thread = std::move(tmp);                
+            return true;
+        }
+
+        return false;
     }
     void terminate()
     {
@@ -31,10 +46,16 @@ public:
             std::cout << "epoll_close=" << ret << std::endl;
         }
     }
-    bool add(int fd)
+    bool add(int fd,TCallback *cb)
     {
         struct epoll_event event;
-        int ret = epoll_ctl(m_epoll_fd, EPOLL_CTL_ADD,fd,&event);
+
+        event.events   = EPOLLIN | EPOLLOUT;  
+        event.data.fd  = fd;
+        event.data.ptr = cb;   
+
+        int ret = epoll_ctl(m_epoll_fd, EPOLL_CTL_ADD,fd,&event); 
+
         return ret > 0;
     }
     bool remove(int fd)
@@ -45,17 +66,37 @@ public:
 private:
     int m_epoll_fd = -1;
     bool m_alive = false;
-    epoll_event m_events[TMaxEvents]={0};
+    std::thread m_thread;
 
-    void wait()
+    void run()
     {
         std::cout << "starting epoll thread m_alive=" << 
             m_alive << std::endl;
 
-        int ret=-1;
+        epoll_event events[TMaxEvents]={0};
+
         while( m_alive )
         {
-            ret = epoll_wait(m_epoll_fd, m_events, TMaxEvents);
+            int n = epoll_wait(m_epoll_fd, events, TMaxEvents, TIMEOUT);
+
+            // error
+            if( n < 0 )
+            {
+                continue;
+            }          
+            // timeout  
+            else if( 0 == n )
+            {   
+                continue;
+            }
+            // callback 
+            for(int i=0; i < n; ++i)
+            {
+                epoll_event &event = events[i];
+                int fd = event.data.fd;
+                TCallback *cb = static_cast<TCallback *>(event.data.ptr);
+                (*cb)(fd);
+            }
         }
 
         std::cout << "endling epoll thread" << std::endl;
