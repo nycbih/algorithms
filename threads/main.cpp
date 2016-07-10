@@ -215,8 +215,44 @@ private:
     bool m_done;
 };
 
+//////////////////////////////////////////////////////////////////////////////
+///
+/// create thread from class
+///
+//////////////////////////////////////////////////////////////////////////////
+class Active
+{
+public:
+    Active()
+    {
+    }
 
-///////////////////////////////////////////////////////////////////////////////
+    void init()
+    {
+        std::cout << "starting thread" << std::endl;
+        std::thread tmp(&Active::run,this);
+        std::cout << "ending thread" << std::endl;
+        m_thread = std::move(tmp);
+    }
+    void done()
+    {
+        m_done=true;
+        m_thread.join();
+        std::cout << "done complete" << std::endl;
+    }
+private:
+    bool m_done;
+    std::thread m_thread;
+
+
+    void run()
+    {
+        std::cout << "thread has started" << std::endl;
+    }
+
+};
+
+/////////////////////////////////////////:q//////////////////////////////////////
 ///
 /// ThreadPool
 ///
@@ -238,8 +274,13 @@ int main()
     std::thread tc(c);
 
     // wait until thread ends
-    tp.join();
-    tc.join();
+ //   tp.join();
+ //   tc.join();
 
+    Active active;
+    active.init();
+    active.done();
+
+    std::cout << "Application terminating" << std::endl;
     return 0;
 }
