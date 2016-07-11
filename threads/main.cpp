@@ -233,12 +233,12 @@ public:
         msg("starting init");
         std::thread tmp(&Active::run,this);
         m_thread = std::move(tmp);
-        m_thread.join();
         msg("done init");
     }
 
     void done()
     {
+        msg("start done");
         m_done=true;
         m_thread.join();
         msg("done complete");
@@ -261,9 +261,10 @@ private:
         while( !m_done )
         {
             msg("thread running");
+            std::this_thread::sleep_for(std::chrono::seconds(1));
         }
         
-        msg("endig run");
+        msg("ending run");
     }
 };
 
@@ -285,8 +286,8 @@ int main()
     Consumer c(queue);
 
     // start threads with shared queue
-    std::thread tp(p);
-    std::thread tc(c);
+    //std::thread tp(p);
+    //std::thread tc(c);
 
     // wait until thread ends
  //   tp.join();
@@ -294,6 +295,10 @@ int main()
 
     Active active;
     active.init();
+
+    active.msg("main thread start sleeping");
+    std::this_thread::sleep_for(std::chrono::seconds(10));
+    active.msg("main thread done sleeping");
     active.done();
 
     std::cout << "Application terminating" << std::endl;
