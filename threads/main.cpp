@@ -212,20 +212,7 @@ private:
     std::mutex m_lock;
     std::condition_variable m_cond;
 };
-///////////////////////////////////////////////////////////////////////////////
-///
-/// ThreadPool
-///
-///////////////////////////////////////////////////////////////////////////////
-class ThreadPool
-{
-public:
 
-
-private:
-
-
-};
 
 
 using DataQueue = TSQueue<int>;
@@ -355,6 +342,111 @@ private:
 /// ThreadPool
 ///
 ///////////////////////////////////////////////////////////////////////////////
+
+class Task
+{
+public:
+    Task(size_t identifier)
+    :m_identifier(identifier)
+    {
+
+    }
+private:
+    size_t m_identifier;
+    void operator()()
+    {
+
+
+    }
+};
+
+
+class ThreadPool
+{
+public:
+    using TTask = std::function<void (void)>;
+
+    ThreadPool(AsyncLogger &logger)
+    :m_size(0)
+    ,m_done(false)
+    ,m_logger(logger)
+    {
+        m_logger.log("CTOR ThreadPool");
+    }
+
+    bool init(size_t size=std::thread::hardware_concurrency())
+    {
+        m_logger.log("start init ThreadPool");
+
+        std::string out("pool size=");
+        out += std::to_string(size);
+
+        m_logger.log(out.c_str());
+
+        m_size = size;
+        m_thread.reserve(m_size);
+
+        // create thread pool
+        for( size_t i=0; i < m_size;++i)
+        {
+            m_thread.push_back( std::thread(&ThreadPool::run,this));
+            m_logger.log("create thread");
+        }
+
+        m_logger.log("end init ThreadPool");
+
+        return true;
+    }
+
+    void done()
+    {
+        m_logger.log("start done ThreadPool");
+
+        m_done=true;
+
+        // wait for threads to exit
+        for( size_t i=0; i < m_size;++i)
+        {
+            std::thread &next = m_thread[i];
+            next.join();
+            m_logger.log("join thread");
+        }
+
+        m_logger.log("end done ThreadPool");
+    }
+
+    // execute task on thread
+    void execute(TTask &task)
+    {
+        m_queue.push(task);
+
+    }
+private:
+    size_t m_size;
+    std::atomic<bool> m_done;
+    std::vector<std::thread> m_thread;
+    TSQueue<TTask> m_queue;
+    AsyncLogger &m_logger;
+
+    void run()
+    {
+        while( !m_done )
+        {
+            TTask task;
+            if( m_queue.try_pop(task))
+            {
+                task();
+            }
+            else
+            {
+                std::this_thread::yield();
+            }
+        }
+    }
+};
+
+
+
 int main()
 {
     std::cout << "starting main" << std::endl;
@@ -365,6 +457,15 @@ int main()
     std::cout << "gone logger init" << std::endl;
 
     logger.log("Starting Application!");
+
+    ThreadPool pool(logger);
+    pool.init();
+
+    std::this_thread::sleep_for(std::chrono::seconds(10));
+
+    pool.done();
+
+    std::this_thread::sleep_for(std::chrono::seconds(10));
 
 
     // create queue, producer/consumer
@@ -385,6 +486,7 @@ int main()
     c.done();
     tc.join();
 
+    /*
     Active active(logger);
     active.init();
 
@@ -393,6 +495,8 @@ int main()
 
     active.done();
     std::this_thread::sleep_for(std::chrono::seconds(10));
+
+     */
     logger.done();
 
 
