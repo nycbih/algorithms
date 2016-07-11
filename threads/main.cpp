@@ -312,28 +312,23 @@ public:
     : m_logger(logger)
     ,m_done(false)
     {
+        m_logger.log("Create Active");
     }
 
     void init()
     {
-        msg("starting init");
+        m_logger.log("starting init Active");
         std::thread tmp(&Active::run,this);
         m_thread = std::move(tmp);
-        msg("done init");
+        m_logger.log("done init Active");
     }
 
     void done()
     {
-        msg("start done");
+        m_logger.log("start done Active");
         m_done=true;
         m_thread.join();
-        msg("done complete");
-    }
-
-    void msg(const char *msg )
-    {
-        std::lock_guard<std::mutex> l(m_lock);
-        std::cout << msg << std::endl;
+        m_logger.log("done done() active");
     }
 private:
     AsyncLogger &m_logger;
@@ -343,15 +338,15 @@ private:
 
     void run()
     {
-        msg("starting run");
+        m_logger.log("start run Active thread");
 
         while( !m_done )
         {
-            msg("thread running");
+            m_logger.log("active thread running");
             std::this_thread::sleep_for(std::chrono::seconds(1));
         }
         
-        msg("ending run");
+        m_logger.log("end run Active thread");
     }
 };
 
@@ -393,12 +388,10 @@ int main()
     Active active(logger);
     active.init();
 
-    active.msg("main thread start sleeping");
+    logger.log("Application sleeping 10 seconds");
     std::this_thread::sleep_for(std::chrono::seconds(10));
-    active.msg("main thread done sleeping");
-    active.done();
 
-    logger.log("Wait to end Application");
+    active.done();
     std::this_thread::sleep_for(std::chrono::seconds(10));
     logger.done();
 
