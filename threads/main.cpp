@@ -346,17 +346,18 @@ private:
 class Task
 {
 public:
-    Task(size_t identifier)
+    Task(AsyncLogger &logger, size_t identifier)
     :m_identifier(identifier)
+    , m_logger(logger)
     {
 
     }
 private:
     size_t m_identifier;
+    AsyncLogger &m_logger;
     void operator()()
     {
-
-
+        m_logger.log("inside task");
     }
 };
 
@@ -430,11 +431,14 @@ private:
 
     void run()
     {
+        m_logger.log("start thead in thread pool");
+
         while( !m_done )
         {
             TTask task;
             if( m_queue.try_pop(task))
             {
+                m_logger.log("process task in thread pool");
                 task();
             }
             else
@@ -442,6 +446,8 @@ private:
                 std::this_thread::yield();
             }
         }
+
+        m_logger.log("end thead in thread pool");
     }
 };
 
