@@ -34,7 +34,7 @@ private:
 ///
 /// Thread stack
 ///
-///////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
 template<class TData>
 class TSStack
 {
@@ -224,35 +224,50 @@ class Active
 {
 public:
     Active()
+    :m_done(false)
     {
     }
 
     void init()
     {
-        std::cout << "starting thread" << std::endl;
+        msg("starting init");
         std::thread tmp(&Active::run,this);
-        std::cout << "ending thread" << std::endl;
         m_thread = std::move(tmp);
+        m_thread.join();
+        msg("done init");
     }
+
     void done()
     {
         m_done=true;
         m_thread.join();
-        std::cout << "done complete" << std::endl;
+        msg("done complete");
+    }
+
+    void msg(const char *msg )
+    {
+        std::lock_guard<std::mutex> l(m_lock);
+        std::cout << msg << std::endl;
     }
 private:
     bool m_done;
     std::thread m_thread;
-
+    std::mutex m_lock;
 
     void run()
     {
-        std::cout << "thread has started" << std::endl;
-    }
+        msg("starting run");
 
+        while( !m_done )
+        {
+            msg("thread running");
+        }
+        
+        msg("endig run");
+    }
 };
 
-/////////////////////////////////////////:q//////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
 ///
 /// ThreadPool
 ///
