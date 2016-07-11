@@ -5,6 +5,7 @@
 #include <stack>
 #include <queue>
 #include <chrono>
+#include <vector>
 #include <condition_variable>
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -30,6 +31,78 @@ public:
 private:
     std::atomic_flag m_flag = ATOMIC_FLAG_INIT;
 };
+
+
+////////////////////////////////////////////////////////////////////////////////
+///
+/// async logger
+///
+////////////////////////////////////////////////////////////////////////////////
+class AsyncLogger
+{
+public:
+    AsyncLogger()
+    :m_done(false)
+    {
+        log("create AsyncLogger");
+    }
+
+    bool init()
+    {
+        log("starting logger init");
+        std::thread tmp(&AsyncLogger::run,this);
+        m_thread = std::move(tmp);
+        log("done logger init");
+        return true;
+    }
+
+    void log(const char *str)
+    {
+        std::lock_guard<std::mutex> l(m_lock);
+        m_logger.push(str);
+    }
+
+    void done()
+    {
+        log("start logger done");
+        m_done = true;
+        m_thread.join();
+        log("end logger done");
+    }
+private:
+    bool m_done;
+    std::mutex m_lock;
+    std::thread m_thread;
+
+    using TLogger=std::queue<std::string>;
+    TLogger m_logger;
+
+    void run()
+    {
+        log("start logger thread");
+
+        while( !m_done && m_logger.size() )
+        {
+            while( !m_logger.empty() )
+            {
+                std:: string msg;
+                {
+                    std::lock_guard<std::mutex> l(m_lock);
+                    msg = m_logger.front();
+                    m_logger.pop();
+                }
+
+                std::cout << msg << std::endl;
+            }
+
+            std::this_thread::sleep_for(std::chrono::milliseconds(100));
+        }
+
+        log("done logger thread");
+    }
+};
+
+
 ///////////////////////////////////////////////////////////////////////////////
 ///
 /// Thread stack
@@ -130,6 +203,10 @@ public:
     {
         return m_queue.size();
     }
+    bool empty()
+    {
+        return m_queue.empty();
+    }
 private:
     std::queue<TData> m_queue;
     std::mutex m_lock;
@@ -161,21 +238,21 @@ using DataQueue = TSQueue<int>;
 class Producer
 {
 public:
-    Producer(DataQueue &queue, size_t count)
-    :m_queue(queue)
+    Producer(AsyncLogger &logger,DataQueue &queue, size_t count)
+    :m_logger(logger)
+    ,m_queue(queue)
     ,m_counter(count)
     {
+        m_logger.log("CTOR Producer");
     }
-    void operator()()
-    {
-        for( int i=0; i < m_counter; ++i)
-        {
-            int out = i;
-            m_queue.push(out);
-        }
 
+    void push(int val)
+    {
+        m_queue.push(val);
     }
+
 private:
+    AsyncLogger &m_logger;
     DataQueue &m_queue;
     int m_counter;
 };
@@ -188,22 +265,29 @@ private:
 class Consumer
 {
 public:
-    Consumer(DataQueue &queue)
-    :m_queue(queue)
+    Consumer(AsyncLogger &logger, DataQueue &queue)
+    :m_logger(logger)
+    ,m_queue(queue)
     {
+        m_logger.log("CTOR Consumer");
     }
     void operator()()
     {
+        m_logger.log("start Consumer thread");
+
         int item{};
         size_t msec = 100;
 
-        while( !m_done )
+        while( !m_done && !m_queue.empty() )
         {
             if( m_queue.wait_and_pop(item,msec))
             {
-                std::cout << item << std::endl;
+                std::string out = std::to_string(item);
+                m_logger.log(out.c_str());
             }
         }
+
+        m_logger.log("end Consumer thread");
     }
 
     void done()
@@ -211,20 +295,22 @@ public:
         m_done=true;
     }
 private:
+    AsyncLogger &m_logger;
     DataQueue &m_queue;
     bool m_done;
 };
 
 //////////////////////////////////////////////////////////////////////////////
 ///
-/// create thread from class
+/// create active class, single internal thead for class
 ///
 //////////////////////////////////////////////////////////////////////////////
 class Active
 {
 public:
-    Active()
-    :m_done(false)
+    Active(AsyncLogger &logger)
+    : m_logger(logger)
+    ,m_done(false)
     {
     }
 
@@ -250,6 +336,7 @@ public:
         std::cout << msg << std::endl;
     }
 private:
+    AsyncLogger &m_logger;
     bool m_done;
     std::thread m_thread;
     std::mutex m_lock;
@@ -275,25 +362,35 @@ private:
 ///////////////////////////////////////////////////////////////////////////////
 int main()
 {
-    std::cout << "Starting Application!" << std::endl;
+    std::cout << "starting main" << std::endl;
+
+    AsyncLogger logger;
+    logger.init();
+
+    std::cout << "gone logger init" << std::endl;
+
+    logger.log("Starting Application!");
+
 
     // create queue, producer/consumer
 
     int count=10;
 
     DataQueue queue;
-    Producer p(queue,count);
-    Consumer c(queue);
+    Producer p(logger,queue,count);
+    Consumer c(logger,queue);
+
+    for(int i=0; i < 10; ++i)
+    {
+        p.push(i);
+    }
 
     // start threads with shared queue
-    //std::thread tp(p);
-    //std::thread tc(c);
+    std::thread tc(c);
+    c.done();
+    tc.join();
 
-    // wait until thread ends
- //   tp.join();
- //   tc.join();
-
-    Active active;
+    Active active(logger);
     active.init();
 
     active.msg("main thread start sleeping");
@@ -301,6 +398,10 @@ int main()
     active.msg("main thread done sleeping");
     active.done();
 
-    std::cout << "Application terminating" << std::endl;
+    logger.log("Wait to end Application");
+    std::this_thread::sleep_for(std::chrono::seconds(10));
+    logger.done();
+
+
     return 0;
 }
