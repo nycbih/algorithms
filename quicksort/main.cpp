@@ -13,16 +13,20 @@
 #include <algorithm>
 #include <array>
 
-void show(int array[], int r, int l)
+using TArray = std::vector<int>;
+
+
+void show(const TArray &array)
 {
-    for(size_t i=r; i <= l; ++i)
+    for(const int &val : array)
     {
-        std::cout << array[i];
+        std::cout << val << '|' ;
     }
 
     std::cout << std::endl;
 }
-int pivot(int a[], int l, int r)
+
+int pivot(TArray &a, int l, int r)
 {
     int pi = l;
     int pv = a[l];
@@ -40,15 +44,14 @@ int pivot(int a[], int l, int r)
 
     std::swap(a[pi], a[l]);
 
-    show(a,0,7);
-
     return pi;
 }
-size_t quicksort(int a[], int l, int r)
+size_t quicksort(TArray &a, int l, int r)
 {
-    std::cout << "l=" << l << " r=" << r << std::endl;
+    int sz = (r-l) + 1;
+    std::cout << "l=" << l << " r=" << r << " sz=" << sz << std::endl;
 
-    if( (r-l) > 0 )
+    if( sz > 1 )
     {
         int p = pivot(a, l, r);
 
@@ -61,26 +64,46 @@ size_t quicksort(int a[], int l, int r)
 
    return 0;
 }
-
-
 ///
 /// main
 ///
 int main(int argc, char *argv[])
 {
-    int a[] = {3,8,2,5,1,4,7,6};
+    if( argc <= 1 )
+    {
+        std::cout << "please enter file to sort" << std::endl;
+        return 0;
+    }
 
-    int SIZE = sizeof(a)/sizeof(int);
+    const std::string file(argv[1]);
 
-    show(a,0,SIZE-1);
+    std::cout << "processing file=" << file << std::endl;
+    std::string line;
+    std::ifstream in(file.c_str());
+    if( !in.is_open() )
+    {
+        std::cout << "failed to open file=" << file << std::endl;
+        return 0;
+    }
 
-    int count = quicksort(a,0,SIZE-1);
+    TArray v;
+    while( !in.eof() )
+    {
+        if( getline(in, line) )
+        {
+            size_t val = atoi(line.c_str());
+            v.push_back(val);
+        }
+    }
 
+    std::cout << "starting with count=" << v.size() << std::endl;
+    show(v);
 
-    //std::sort(array,array+SIZE, std::greater<int>());
+    int count = quicksort(v,0,v.size()-1);
 
-    show(a,0,SIZE-1);
+    std::cout << "count=" << count << std::endl;
 
-    std::cout << "done main" << "count=" << count <<  std::endl;
+    show(v);
+
     return 0;
 }
