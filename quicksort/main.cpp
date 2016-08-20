@@ -28,8 +28,11 @@ void show(const TArray &array)
 
 int pivot(TArray &a, int l, int r)
 {
+   // std::swap(a[l], a[r]);
+
     int pi = l;
     int pv = a[l];
+
 
     std::cout << "pi=" << pi << " pv=" << pv << std::endl;
 
