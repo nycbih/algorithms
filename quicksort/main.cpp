@@ -26,15 +26,56 @@ void show(const TArray &array)
     std::cout << std::endl;
 }
 
+bool isMid(TArray &a, int mid, int x, int y)
+{
+    int ax = a[x];
+    int am = a[mid];
+    int ay = a[y];
+
+    if( ( a[x] <= a[mid] && a[y] >= a[mid]) || (a[y] <= a[mid] && a[x] >= a[mid]) )
+    {
+        return true;
+    }
+
+    return false;
+}
+
 int pivot(TArray &a, int l, int r)
 {
-   // std::swap(a[l], a[r]);
+    //std::swap(a[l], a[r]);
+
+    int sz = (r-l) + 1;
+    int mid = (sz % 2) == 0 ? (l + (sz-1)/2) : (l + (sz)/2);
+
+    // left
+    if( isMid(a, l, mid, r)  )
+    {
+        std::cout << "left=" << a[l] << std::endl;
+        std::swap(a[l], a[l]);
+    }
+    // mid
+    else if( isMid(a, mid, l, r) )
+    {
+        std::cout << "mid=" << a[mid] << std::endl;
+        std::swap(a[l], a[mid]);
+    }
+    // right
+    else if( isMid(a, r, l, mid) )
+    {
+        std::cout << "right=" << a[r] << std::endl;
+        std::swap(a[l], a[r]);
+    }
+    else
+    {
+        std::cout << "***********" << std::endl;
+        exit(1);
+    }
+
 
     int pi = l;
     int pv = a[l];
 
-
-    std::cout << "pi=" << pi << " pv=" << pv << std::endl;
+    std::cout << "pi=" << pi << " pv=" << pv << " ( l=" << l << " r=" << r << " mid=" << mid << ")" << std::endl;
 
     for(int i = l+1 ; i <= r ; i++)
     {
@@ -106,7 +147,8 @@ int main(int argc, char *argv[])
 
     std::cout << "count=" << count << std::endl;
 
-    show(v);
+
+
 
     return 0;
 }
