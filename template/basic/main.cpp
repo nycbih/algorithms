@@ -35,7 +35,7 @@ struct Less<char *>
     }
 };
 
-void test_specialization()
+void test_predicate()
 {
     Less<int> less1;
 
@@ -87,8 +87,41 @@ const auto max( const char * a, const char *b )
     SHOW_SIGNATURE;
     return strcmp(a,b) < 0 ? a : b;
 }
+
+template<typename T, typename T2>
+auto min( const T &x, const T2 &y)
+{
+    SHOW_SIGNATURE;
+    return x + y;
+};
+
 ///
-/// test driver
+/// test min
+///
+auto test_min()
+{
+    SHOW_SIGNATURE;
+
+    int x= int();
+    auto y = x;
+
+    std::cout << y << std::endl;
+
+    int a = min(10,10.4);
+
+    double b = min(10,10.4);
+
+    using Type = decltype(b);
+
+    Type i = 4;
+
+    return i;
+
+}
+
+
+///
+/// test max
 ///
 void test_max()
 {
@@ -107,8 +140,9 @@ int main()
 {
     std::cout << "starting main" << std::endl;
 
-    test_specialization();
+    test_predicate();
     test_max();
+    test_min();
     std::cout << "ending main" << std::endl;
 
     return 0;
