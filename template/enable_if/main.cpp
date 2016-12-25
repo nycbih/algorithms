@@ -1,6 +1,15 @@
 #include <iostream>
 #include <type_traits>
 
+///
+/// enable_if uses
+/// 1) Function return type
+/// 2) Function argument type
+/// 3) Function template parameter
+/// 4) Class template parameter
+///
+
+
 #define SHOW_SIGNATURE std::cout << __PRETTY_FUNCTION__ <<  ":" << __LINE__ << std::endl;
 
 namespace my
@@ -39,6 +48,16 @@ namespace my
     void execute(enable_if_class<T> t) 
     {
         SHOW_SIGNATURE;
+    }
+
+
+
+    template< typename T >
+    typename std::enable_if< std::is_integral< T >::value, T >::type
+    process(T val)
+    {
+        SHOW_SIGNATURE;
+        return val;
     }
 }
 
