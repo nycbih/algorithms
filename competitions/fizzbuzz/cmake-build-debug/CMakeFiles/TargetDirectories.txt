@@ -1,3 +1,0 @@
-/Users/ajitdias/dev-proj/algorithms/c++14/hacker-rank/fizzbuzz/cmake-build-debug/CMakeFiles/edit_cache.dir
-/Users/ajitdias/dev-proj/algorithms/c++14/hacker-rank/fizzbuzz/cmake-build-debug/CMakeFiles/rebuild_cache.dir
-/Users/ajitdias/dev-proj/algorithms/c++14/hacker-rank/fizzbuzz/cmake-build-debug/CMakeFiles/fizzbuzz.dir
