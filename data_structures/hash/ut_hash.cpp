@@ -23,7 +23,7 @@ TEST_CASE( "test with size_t", "[hash]" )
 
     for(size_t i=0; i < MAX_ITEMS; ++i)
     {
-        size_t key = rand() % MAX_ITEMS*10;
+        size_t key = rand();
         list.push_back(std::make_pair(key,i));
     }
 
