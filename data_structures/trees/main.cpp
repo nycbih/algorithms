@@ -88,7 +88,18 @@ public:
     {
         if( nullptr == node ) return 0;
 
-        std::cout << node->val << std::endl;
+        if( !node->lhs && !node->rhs)
+        {
+            return 1;
+        }
+        else if( !node->lhs )
+        {
+            min_depth( node->rhs + 1);
+        }
+        else if( !node->rhs )
+        {
+            min_depth( node->lhs + 1);
+        }
 
         size_t lhs = min_depth(node->lhs);
         size_t rhs = min_depth(node->rhs);
@@ -138,6 +149,28 @@ public:
 
         return size(node->lhs) + 1 + size(node->rhs);
     }
+    void inorder(const node_t *node)
+    {
+        if( node == nullptr ) return;
+        inorder(node->lhs);
+        std::cout << node->val << std::endl;
+        inorder(node->rhs);
+    }
+    void preorder(const node_t *node)
+    {
+        if( node == nullptr ) return;
+        std::cout << node->val << std::endl;
+        preorder(node->lhs);
+        preorder(node->rhs);
+    }
+    void postorder(const node_t *node)
+    {
+        if( node == nullptr ) return;
+        postorder(node->lhs);
+        postorder(node->rhs);
+        std::cout << node->val << std::endl;
+
+    }
 private:
     node_t *m_root= nullptr;
 
@@ -175,16 +208,16 @@ private:
 
 void status(Tree &tree, node_t *root)
 {
-  //  std::cout << "size=" << tree.size(root) << std::endl;
-  //  std::cout << "min=" << tree.minValue(root) << std::endl;
-  ///  std::cout << "max=" << tree.maxValue(root) << std::endl;
+    std::cout << "size=" << tree.size(root) << std::endl;
+    std::cout << "min=" << tree.minValue(root) << std::endl;
+    std::cout << "max=" << tree.maxValue(root) << std::endl;
     std::cout << "min_depth=" << tree.min_depth(root) << std::endl;
     std::cout << "max_depth=" << tree.max_depth(root) << std::endl;
 }
 
 int main()
 {
-    int vector[] = {5,4,6,3,8};
+    int vector[] = {4,2,5,1,3};
 
     Tree tree;
 
@@ -200,7 +233,11 @@ int main()
         std::cout << "val=" << val << " find=" << tree.find(val,root) << std::endl;
     }
 
-    //tree.remove(6,root);
+    //tree.inorder(root);
+    //tree.preorder(root);
+    //tree.postorder(root);
+
+    //tree.remove(5,root);
 
     status(tree,root);
 
