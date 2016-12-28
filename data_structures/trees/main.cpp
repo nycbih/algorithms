@@ -1,120 +1,28 @@
 #include <iostream>
-#include <thread>
-#include <atomic>
-#include <deque>
-#include <stack>
-#include <queue>
-#include <chrono>
-#include <vector>
-#include <condition_variable>
 
 struct node_t
 {
-    int val = 0;
-    node_t *lhs=nullptr;
-    node_t *rhs= nullptr;
+    int val=0;
+    node_t *lhs = nullptr;
+    node_t *rhs = nullptr;
 
-    static node_t *create(int val)
+    static node_t *create(int val_ )
     {
         node_t *tmp = new node_t;
-        tmp->val = val;
+        tmp->val = val_;
         return tmp;
     }
-
 };
 
 class Tree
 {
 public:
-    Tree()
-    {
-    }
-
     node_t *&root()
     {
         return m_root;
     }
 
-    void insert( int val )
-    {
-        if( m_root == nullptr )
-        {
-            m_root = node_t::create(val);
-            return;
-        }
-
-        insert(m_root,val);
-    }
-
-    bool find(int val)
-    {
-        bool found = find( m_root, val);
-
-        if( found )
-        {
-            std::cout << "found" << std::endl;
-        }
-        else
-        {
-            std::cout << "not found" << std::endl;
-        }
-
-        return found;
-    }
-
-    void print()
-    {
-        print(m_root);
-    }
-
-    int max_depth()
-    {
-        return max_depth(m_root);
-    }
-
-    int min_depth()
-    {
-        return min_depth(m_root);
-    }
-
-    int min_val()
-    {
-        if( m_root == nullptr ) return 0;
-
-        node_t *c = m_root;
-        while( c->lhs != nullptr )
-        {
-            c = c->lhs;
-        }
-
-        return c->val;
-    }
-
-    int max_val()
-    {
-        if( m_root == nullptr ) return 0;
-
-        node_t *c = m_root;
-        while( c->rhs != nullptr )
-        {
-            c = c->rhs;
-        }
-
-        return c->val;
-    }
-
-private:
-    node_t *m_root = nullptr;
-
-    bool find(node_t *node, int val)
-    {
-        if( node == nullptr) return false;
-        if( node->val == val ) return true;
-        else if( node->val <= val ) return find( node->lhs, val);
-        else return find( node->rhs, val);
-    }
-
-    void insert( node_t *&node, int val )
+    void insert( int val, node_t *&node )
     {
         if( node == nullptr )
         {
@@ -122,74 +30,184 @@ private:
             return;
         }
 
-        if( val <= node->val )
+        else if( val < node->val )
         {
-            insert(node->lhs, val);
+            insert(val, node->lhs);
         }
         else
         {
-            insert( node->rhs, val );
+            insert(val, node->rhs);
         }
     }
-
-    void print( node_t *node )
+    bool find( int val, node_t *&node )
     {
-        if( node == nullptr ) return;
+        if( node == nullptr )
+        {
+            return false;
+        }
+        else if( val == node->val )
+        {
+            return true;
+        }
+        else if( val <= node->val )
+        {
+            return find( val, node->lhs );
+        }
+        else
+        {
+            return find( val, node->rhs );
+        }
+    }
+    bool remove( int val, node_t *&node )
+    {
+        // not found
+        if( node == nullptr )
+        {
+            return false;
+        }
+        // left
+        else if( val < node->val )
+        {
+            remove( val, node->lhs );
+            return true;
+        } // right
+        else if( val > node->val )
+        {
+            remove( val, node->rhs );
+            return true;
+        } // match
+        else
+        {
+            node = remove( node );
+            return true;
+        }
 
-        print( node->lhs );
+        return true;
+    }
+    size_t min_depth(const node_t *node)
+    {
+        if( nullptr == node ) return 0;
 
         std::cout << node->val << std::endl;
 
-        print( node->rhs );
-    }
+        size_t lhs = min_depth(node->lhs);
+        size_t rhs = min_depth(node->rhs);
 
-    int max_depth(node_t *node)
+        return (lhs < rhs) ? lhs + 1 : rhs + 1;
+    }
+    size_t max_depth(const node_t *node)
+    {
+        if( nullptr == node ) return 0;
+
+ //       std::cout << node->val << std::endl;
+
+        size_t lhs = max_depth(node->lhs);
+        size_t rhs = max_depth(node->rhs);
+
+        return (lhs > rhs) ? lhs + 1 : rhs + 1;
+    }
+    size_t minValue(const node_t *node)
+    {
+        if( nullptr == node ) return 0;
+
+        const node_t *current = node;
+
+        while( current->lhs != nullptr )
+        {
+            current = current->lhs;
+        }
+
+        return current->val;
+    }
+    size_t maxValue(const node_t *node)
+    {
+        if( nullptr == node ) return 0;
+
+        const node_t *current = node;
+
+        while( current->rhs != nullptr )
+        {
+            current = current->rhs;
+        }
+
+        return current->val;
+    }
+    size_t size(const node_t *node)
     {
         if( node == nullptr ) return 0;
 
-        int dlhs = max_depth(node->lhs);
-        int drhs = max_depth(node->rhs);
-
-        if( dlhs >= drhs ) return dlhs + 1;
-        else return drhs + 1 ;
+        return size(node->lhs) + 1 + size(node->rhs);
     }
+private:
+    node_t *m_root= nullptr;
 
-    int min_depth(node_t *node)
+    node_t *remove(node_t *&node)
     {
-        if( node == nullptr ) return 0;
-
-        int dlhs = min_depth(node->lhs);
-        int drhs = min_depth(node->rhs);
-
-        if( dlhs <= drhs ) return dlhs + 1;
-        else return drhs + 1;
+        // 1) no children
+        if( !node->lhs && !node->rhs )
+        {
+            return nullptr;
+        }
+        // 2) rhs child
+        else if( !node->lhs && node->rhs )
+        {
+            return node->rhs;
+        }
+        // 3) lhs child
+        else if( node->lhs && !node->rhs )
+        {
+            return node->lhs;
+        }
+        // 4) both children present;
+        else
+        {
+            if( node->rhs->lhs)
+            {
+                node->val = node->rhs->lhs->val;
+                delete node->rhs->lhs;
+                node->rhs->lhs = nullptr;
+            }
+            return node;
+        }
     }
 };
 
 
+void status(Tree &tree, node_t *root)
+{
+  //  std::cout << "size=" << tree.size(root) << std::endl;
+  //  std::cout << "min=" << tree.minValue(root) << std::endl;
+  ///  std::cout << "max=" << tree.maxValue(root) << std::endl;
+    std::cout << "min_depth=" << tree.min_depth(root) << std::endl;
+    std::cout << "max_depth=" << tree.max_depth(root) << std::endl;
+}
+
 int main()
 {
-    std::cout << "starting main" << std::endl;
+    int vector[] = {5,4,6,3,8};
 
     Tree tree;
-    tree.insert(200);
-    tree.insert(1);
-    tree.insert(2);
-    tree.insert(3);
-    tree.print();
 
-    tree.find(200);
-    tree.find(800);
+    node_t *&root = tree.root();
 
-    std::cout << "max-depth=" << tree.max_depth() << std::endl;
+    for( auto val : vector )
+    {
+        tree.insert(val,root);
+    }
 
-    std::cout << "min-depth=" << tree.min_depth() << std::endl;
+    for( auto val : vector )
+    {
+        std::cout << "val=" << val << " find=" << tree.find(val,root) << std::endl;
+    }
 
-    std::cout << "min-val=" << tree.min_val() << std::endl;
+    //tree.remove(6,root);
 
-    std::cout << "max-val=" << tree.max_val() << std::endl;
+    status(tree,root);
 
-    std::cout << "ending main" << std::endl;
+   // for( auto val : vector )
+    //{
+    //    tree.remove(val,root);
+   // }
 
-    return 0;
+    //status(tree,root);
 }
