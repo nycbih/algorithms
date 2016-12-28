@@ -58,31 +58,44 @@ public:
             return find( val, node->rhs );
         }
     }
-    bool remove( int val, node_t *&node )
+    node_t *remove( int val, node_t *&node )
     {
-        // not found
-        if( node == nullptr )
+        if( node == nullptr)
         {
-            return false;
+            return node;
         }
-        // left
         else if( val < node->val )
         {
-            remove( val, node->lhs );
-            return true;
-        } // right
-        else if( val > node->val )
+            node->lhs = remove(val, node->lhs );
+        }
+        else if ( val > node->val )
         {
-            remove( val, node->rhs );
-            return true;
-        } // match
+            node->rhs = remove(val, node->rhs );
+        }
         else
         {
-            node = remove( node );
-            return true;
+            if( !node->lhs )
+            {
+                node_t *tmp = node->rhs;
+                delete node;
+                return tmp;
+            }
+            else if( !node->rhs )
+            {
+                node_t *tmp = node->lhs;
+                delete node;
+                return tmp;
+            }
+            else
+            {
+                node->val = node->rhs->val;
+                node->rhs = nullptr;
+                return node;
+            }
+
         }
 
-        return true;
+        return node;
     }
     size_t min_depth(const node_t *node)
     {
@@ -94,11 +107,11 @@ public:
         }
         else if( !node->lhs )
         {
-            min_depth( node->rhs + 1);
+            return min_depth( node->rhs ) + 1;
         }
         else if( !node->rhs )
         {
-            min_depth( node->lhs + 1);
+            return min_depth( node->lhs ) + 1;
         }
 
         size_t lhs = min_depth(node->lhs);
@@ -169,40 +182,9 @@ public:
         postorder(node->lhs);
         postorder(node->rhs);
         std::cout << node->val << std::endl;
-
     }
 private:
     node_t *m_root= nullptr;
-
-    node_t *remove(node_t *&node)
-    {
-        // 1) no children
-        if( !node->lhs && !node->rhs )
-        {
-            return nullptr;
-        }
-        // 2) rhs child
-        else if( !node->lhs && node->rhs )
-        {
-            return node->rhs;
-        }
-        // 3) lhs child
-        else if( node->lhs && !node->rhs )
-        {
-            return node->lhs;
-        }
-        // 4) both children present;
-        else
-        {
-            if( node->rhs->lhs)
-            {
-                node->val = node->rhs->lhs->val;
-                delete node->rhs->lhs;
-                node->rhs->lhs = nullptr;
-            }
-            return node;
-        }
-    }
 };
 
 
@@ -218,6 +200,8 @@ void status(Tree &tree, node_t *root)
 int main()
 {
     int vector[] = {4,2,5,1,3};
+
+//    int vector[] = {4,5,1,3};
 
     Tree tree;
 
@@ -237,10 +221,12 @@ int main()
     //tree.preorder(root);
     //tree.postorder(root);
 
-    //tree.remove(5,root);
+    std::cout << "remove=" << tree.remove(2,root) << std::endl;
+    //std::cout << "remove=" << tree.remove(3,root) << std::endl;
+
 
     status(tree,root);
-
+    tree.inorder(root);
    // for( auto val : vector )
     //{
     //    tree.remove(val,root);
