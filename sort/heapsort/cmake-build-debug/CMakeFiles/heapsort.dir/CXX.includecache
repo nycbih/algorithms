@@ -1,0 +1,18 @@
+#IncludeRegexLine: ^[ 	]*#[ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+/Users/ajitdias/dev-proj/algorithms/sort/heapsort/heapsort.h
+vector
+-
+
+/Users/ajitdias/dev-proj/algorithms/sort/heapsort/main.cpp
+iostream
+-
+heapsort.h
+/Users/ajitdias/dev-proj/algorithms/sort/heapsort/heapsort.h
+
