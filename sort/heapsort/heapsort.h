@@ -45,7 +45,7 @@ namespace pq
             m_array[1] = m_array[m_count];
             m_count -= 1;
 
-            if( TMax == Min )
+            if( m_type == Min )
             {
                 min_heapify( 1 );
             }
@@ -126,13 +126,12 @@ namespace pq
             }
         }
 
-        void min_heapify(int pos)
+        void min_heapify(int root)
         {
-            int root = pos;
-            int lh = 2*pos;
-            int rh = 2*pos + 1;
+            int lh = 2*root;
+            int rh = 2*root + 1;
 
-            int smallest = pos;
+            int smallest = root;
 
             if( lh < m_count && m_array[lh] < m_array[smallest])
             {
@@ -144,9 +143,9 @@ namespace pq
                 smallest = rh;
             }
 
-            if( smallest != pos )
+            if( smallest != root )
             {
-                std::swap(m_array[pos], m_array[smallest]);
+                std::swap(m_array[root], m_array[smallest]);
                 min_heapify(smallest);
             }
         }

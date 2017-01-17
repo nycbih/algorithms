@@ -18,7 +18,7 @@ int main(int argc, char *argv[])
 
     }
 
-    pq::PriorityQueue<16,pq::Min> pq;
+    pq::PriorityQueue<16,pq::Max> pq;
     pq.make_heap(array,sz);
 
     pq.show("before");
@@ -27,11 +27,8 @@ int main(int argc, char *argv[])
     int size = pq.size();
     for( int i=1; i <= size; i++ )
     {
-        std::cout << "i=" << i << " val=" << pq.remove_top() << std::endl;
-        pq.show("sort");
+        std::cout << "remove top: i=" << i << " val=" << pq.remove_top() << std::endl;
     }
-
-
 
 
     std::cout << "done...\n";
