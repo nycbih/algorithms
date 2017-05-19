@@ -24,7 +24,6 @@ Generator and Worker should run in its own threads.
 #include <condition_variable>
 
 
-
 namespace mystuff
 {
 ///
@@ -33,14 +32,13 @@ namespace mystuff
     struct TimerInfo
     {
         size_t timer_id = 0;
-
         int64_t scheduled_time =0;
 
-        void show()
+        void show(const char *msg)
         {
             int64_t nowTime = getTime();
             long timeleft = ( scheduled_time - nowTime );
-            std::cout << "Active Timer: Done!!! timer_id=" << timer_id << " nowTime=" << nowTime << " scheduled_time=" << scheduled_time << " timeleft=" << timeleft << std::endl;
+            std::cout <<  msg << ": timer_id=" << timer_id << " nowTime=" << nowTime << " scheduled_time=" << scheduled_time << " timeleft=" << timeleft << std::endl;
         }
 
         bool show_and_remove()
@@ -194,6 +192,9 @@ namespace mystuff
             return m_info.empty();
         }
 
+        ///
+        /// check timers and remove expired
+        ///
         void checkTimer()
         {
             for( TList::iterator it=m_info.begin(); it != m_info.end(); ++it)
@@ -207,20 +208,23 @@ namespace mystuff
             }
         }
 
+        ///
+        /// show active timers
+        ///
         void showTimers()
         {
             std::cout << "active timers=" << m_info.size() << std::endl;
             for( TList::iterator it=m_info.begin(); it != m_info.end(); ++it)
             {
                 auto &rec = *it;
-                rec.show();
+                rec.show("Active Timers");
             }
         }
 
-        size_t remove_count() const
-        {
-            return m_count;
-        }
+        //size_t remove_count() const
+        //{
+        //  return m_count;
+        // }
 
     private:
         TSQueue &m_queue;
@@ -238,29 +242,30 @@ namespace mystuff
             size_t lastTime = TimerInfo::getTime();
             size_t currentTime = TimerInfo::getTime();
 
-            while( !m_done )
+            while( !m_done || !m_info.empty() )
             {
                 TimerInfo info;
 
                 if( m_queue.wait_and_pop(info,timeout) )
                 {
                     m_info.push_back(info);
+                    info.show("Recived Event");
                 }
+
+                checkTimer();
 
                 currentTime = TimerInfo::getTime();
 
                 // show stats every second
                 long elapsed = currentTime - lastTime;
 
-                // due to timing problem reduce...
+                // show timers every second
                 const long SECOND = 1000;
                 if( elapsed >= SECOND )
                 {
                     lastTime = currentTime;
                     showTimers();
                 }
-
-                checkTimer();
             }
         }
     };
@@ -276,21 +281,21 @@ int main()
     size_t expected = 30;
     mystuff::Generator generator(queue, expected);
     mystuff::Worker worker(queue);
-
-    // generate and terminate
-    generator.init();
-    generator.done();
-
-    // normally would'nt have to do this
     worker.init();
 
+    // give worker time to get settled.
+    std::this_thread::sleep_for(std::chrono::seconds(1));
+
+    // generate events
+    generator.init();
+    generator.done();
 
     ///
     /// wait for a while before exiting
     /// since nothing may show up on sceen..
     /// all kind of timing issues
     ///
-    size_t count=5;
+    size_t count=3;
     while( count-- )
     {
         std::this_thread::sleep_for(std::chrono::seconds(1));
